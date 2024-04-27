@@ -23,19 +23,9 @@ ssh.on("ready", async () => {
 });
 
 const sshExcute = (command, ping) => {
-  if (command.startsWith("cd ")) {
-    // Handle cd command separately
-    const directory = command.substring(3).trim(); // Extract the directory path
-    pwd = directory; // Update the current directory
-    return bot.sendMessage(CHAT_ID, `Changed directory to: ${pwd}`);
-  } else if (command === "ls") {
-    // Handle ls command separately
-    command = "ls"; // Simply execute ls command
-  }
+  const conmm = `cd ${pwd} && ${command}`;
 
-  const fullCommand = `cd ${pwd} && ${command}`; // Prefix command with cd to ensure it's executed in the correct directory
-
-  ssh.exec(fullCommand, (err, stream) => {
+  ssh.exec(conmm, (err, stream) => {
     let result = "";
 
     if (err) {
@@ -48,6 +38,10 @@ const sshExcute = (command, ping) => {
     });
 
     stream.on("close", async (code, signal) => {
+      // save pwd
+      if (command.includes("cd ")) {
+        pwd = command.split("cd ")[1];
+      }
       if (ping) {
         await bot.editMessageText(
           `<b>${pwd}# ${command}</b>\n${result || pwd}`,
@@ -87,6 +81,10 @@ async function checkOwner(msg) {
   return true;
 }
 
+// bot.getMe().then((res) => {
+//   console.log(res);
+// });
+
 bot
   .setMyCommands([
     { command: "add", description: "add new an server /add user@abc.com" },
@@ -95,7 +93,6 @@ bot
     { command: "rm", description: "remove server" },
     { command: "connect", description: "/connect ID | IP" },
     { command: "exit", description: "exit" },
-    { command: "bgmi", description: "execute bgmi command on server" },
   ])
   .then((res) => {
     console.log(res);
@@ -220,6 +217,23 @@ bot.onText(/\/connect (.+)/, async (msg, match) => {
     });
   }
 });
+bot.onText(/\/cd (.+)/, async (msg, match) => {
+  const o = await checkOwner(msg);
+  if (!o) {
+    return;
+  }
+  const directory = match[1].trim();
+  sshExcute(`cd ${directory}`, null);
+});
+
+bot.onText(/\/ls/, async (msg) => {
+  const o = await checkOwner(msg);
+  if (!o) {
+    return;
+  }
+  sshExcute("ls", null);
+});
+
 bot.onText(/\/exit/, async (msg, match) => {
   const o = await checkOwner(msg);
   if (!o) {
@@ -234,31 +248,21 @@ bot.onText(/\/exit/, async (msg, match) => {
   });
 });
 
-// Add the new command handler for /bgmi
-bot.onText(/\/bgmi (.+)/, async (msg, match) => {
+bot.on("text", async (msg) => {
   const o = await checkOwner(msg);
-  if (!o) {
+  if (!o || isBotCommand(msg)) {
     return;
   }
-  if (!current) {
+  if (!current && ssh) {
     await bot.sendMessage(
       CHAT_ID,
       `No server now, please connect one server before next.`
     );
     return;
   }
-  const command = match[1].trim();
-  // Example command: bgmi ip port time thread
-  // Extract parameters
-  const [ip, port, time, thread] = command.split(' ');
-
-  // Construct the command to execute on the server
-  const bgmiCommand = `./bgmi ${ip} ${port} ${time} ${thread}`;
-
-  // Execute the command on the SSH server
-  const ping = await bot.sendMessage(CHAT_ID, `Executing command: ${bgmiCommand}`);
+  const ping = await bot.sendMessage(CHAT_ID, `exec...`);
   try {
-    sshExcute(bgmiCommand, ping);
+    sshExcute(msg.text.trim(), ping);
   } catch (error) {
     console.log(error);
     await bot.editMessageText(`Error: ${JSON.stringify(error, null, 2)}`, {
