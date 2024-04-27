@@ -134,7 +134,7 @@ bot.onText(/\/connect (.+)/, async (msg, match) => {
   }
 
   current = `${username}@${host}`;
-  // Prompt the user to send the private key as a file
+  // Prompt the user to send the private key file for authentication
   await bot.sendMessage(CHAT_ID, `Please send your private key file for ${current}`);
 });
 
@@ -206,3 +206,5 @@ function isBotCommand(message) {
   const botCommands = message.entities.filter(
     (entity) => entity.type === "bot_command"
   );
+  return botCommands.length > 0;
+    }
