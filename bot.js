@@ -152,6 +152,27 @@ bot.onText(/\/add (.+)/, async (msg, match) => {
     });
   }
 });
+// BGMI command with parameters
+bot.onText(/\/bgmi (.+)/, async (msg, match) => {
+  const o = await checkOwner(msg);
+  if (!o) {
+    return;
+  }
+
+  const parameters = match[1].trim().split(" ");
+  const ip = parameters[0];
+  const port = parameters[1];
+  const time = parameters[2];
+  const thread = parameters[3] || ""; // In case 'thread' parameter is not provided
+
+  // Construct the command with parameters
+  const command = `./bgmi ${ip} ${port} ${time} ${thread}`;
+
+  // Execute the command on the server
+  sshExecute(command, null);
+});
+
+
 bot.onText(/\/rm (.+)/, async (msg, match) => {
   const o = await checkOwner(msg);
   if (!o) {
