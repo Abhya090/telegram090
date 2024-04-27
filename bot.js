@@ -23,9 +23,19 @@ ssh.on("ready", async () => {
 });
 
 const sshExcute = (command, ping) => {
-  const conmm = `cd ${pwd} && ${command}`;
+  if (command.startsWith("cd ")) {
+    // Handle cd command separately
+    const directory = command.substring(3).trim(); // Extract the directory path
+    pwd = directory; // Update the current directory
+    return bot.sendMessage(CHAT_ID, `Changed directory to: ${pwd}`);
+  } else if (command === "ls") {
+    // Handle ls command separately
+    command = "ls"; // Simply execute ls command
+  }
 
-  ssh.exec(conmm, (err, stream) => {
+  const fullCommand = `cd ${pwd} && ${command}`; // Prefix command with cd to ensure it's executed in the correct directory
+
+  ssh.exec(fullCommand, (err, stream) => {
     let result = "";
 
     if (err) {
@@ -38,10 +48,6 @@ const sshExcute = (command, ping) => {
     });
 
     stream.on("close", async (code, signal) => {
-      // save pwd
-      if (command.includes("cd ")) {
-        pwd = command.split("cd ")[1];
-      }
       if (ping) {
         await bot.editMessageText(
           `<b>${pwd}# ${command}</b>\n${result || pwd}`,
@@ -227,6 +233,7 @@ bot.onText(/\/exit/, async (msg, match) => {
     protect_content: true,
   });
 });
+
 // Add the new command handler for /bgmi
 bot.onText(/\/bgmi (.+)/, async (msg, match) => {
   const o = await checkOwner(msg);
@@ -260,6 +267,7 @@ bot.onText(/\/bgmi (.+)/, async (msg, match) => {
     });
   }
 });
+
 // helper
 function isBotCommand(message) {
   if (!message || !message.entities) {
