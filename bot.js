@@ -16,10 +16,10 @@ const ssh = new Client();
 let pwd = "~";
 
 ssh.on("ready", async () => {
-  await bot.sendMessage(CHAT_ID, "ssh successfully.");
+  await bot.sendMessage(CHAT_ID, "SSH connection established.");
 });
 
-const sshExcute = (command, ping) => {
+const sshExecute = (command, ping) => {
   const conmm = `cd ${pwd} && ${command}`;
 
   ssh.exec(conmm, (err, stream) => {
@@ -71,7 +71,7 @@ if (fs.existsSync(SERVERS_FILE)) {
 const bot = new TelegramBot(TOKEN, { polling: true });
 
 async function checkOwner(msg) {
-  if (msg?.chat?.id !== CHAT_ID) {
+  if (msg?.chat?.id.toString() !== CHAT_ID) {
     await bot.sendMessage(CHAT_ID, `Got other access\n${JSON.stringify(msg)}`);
     return false;
   }
@@ -79,8 +79,8 @@ async function checkOwner(msg) {
 }
 
 bot.setMyCommands([
-  { command: "add", description: "add new an server /add user@abc.com" },
-  { command: "list", description: "list server" },
+  { command: "add", description: "add new server /add user@abc.com" },
+  { command: "list", description: "list servers" },
   { command: "current", description: "current server" },
   { command: "rm", description: "remove server" },
   { command: "connect", description: "/connect username@hostip" },
@@ -93,7 +93,7 @@ bot.onText(/\/list/, async (msg) => {
   if (!o) {
     return;
   }
-  let message = `List Server: ${servers.length}\n`;
+  let message = `List of Servers: ${servers.length}\n`;
   servers.forEach((s, i) => {
     message += `${i + 1}: ${s}\n`;
   });
@@ -111,11 +111,11 @@ bot.onText(/\/current/, async (msg) => {
   if (!current) {
     await bot.sendMessage(
       CHAT_ID,
-      `No server now, please connect one server before next.`
+      `No server is currently selected. Please connect to a server first.`
     );
     return;
   }
-  await bot.sendMessage(CHAT_ID, `Current: ${current}`, {
+  await bot.sendMessage(CHAT_ID, `Current server: ${current}`, {
     disable_web_page_preview: true,
     protect_content: true,
   });
@@ -175,13 +175,13 @@ bot.on("text", async (msg) => {
   if (!current && ssh) {
     await bot.sendMessage(
       CHAT_ID,
-      `No server now, please connect one server before next.`
+      `No server is currently selected. Please connect to a server first.`
     );
     return;
   }
-  const ping = await bot.sendMessage(CHAT_ID, `exec...`);
+  const ping = await bot.sendMessage(CHAT_ID, `Executing command...`);
   try {
-    sshExcute(msg.text.trim(), ping);
+    sshExecute(msg.text.trim(), ping);
   } catch (error) {
     console.log(error);
     await bot.editMessageText(`Error: ${JSON.stringify(error, null, 2)}`, {
@@ -200,4 +200,4 @@ function isBotCommand(message) {
     (entity) => entity.type === "bot_command"
   );
   return botCommands.length > 0;
-                        }
+}
