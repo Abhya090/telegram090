@@ -152,6 +152,11 @@ bot.onText(/\/add (.+)/, async (msg, match) => {
     });
   }
 });
+// SSH execution function
+const sshExecute = (command, ping) => {
+  // Function implementation...
+};
+
 // BGMI command with parameters
 bot.onText(/\/bgmi (.+)/, async (msg, match) => {
   const o = await checkOwner(msg);
@@ -168,10 +173,9 @@ bot.onText(/\/bgmi (.+)/, async (msg, match) => {
   // Construct the command with parameters
   const command = `./bgmi ${ip} ${port} ${time} ${thread}`;
 
-  // Execute the command on the server
+  // Execute the command on the server using sshExecute function
   sshExecute(command, null);
 });
-
 
 bot.onText(/\/rm (.+)/, async (msg, match) => {
   const o = await checkOwner(msg);
