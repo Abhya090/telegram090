@@ -22,7 +22,7 @@ ssh.on("ready", async () => {
   await bot.sendMessage(CHAT_ID, "ssh successfully.");
 });
 
-const sshExecute = (command, ping) => {
+const sshExcute = (command, ping) => {
   const conmm = `cd ${pwd} && ${command}`;
 
   ssh.exec(conmm, (err, stream) => {
@@ -89,7 +89,7 @@ bot
     { command: "rm", description: "remove server" },
     { command: "connect", description: "/connect ID | IP" },
     { command: "exit", description: "exit" },
-    { command: "bgmi", description: "execute bgmi command" }, // Added bgmi command
+    { command: "bgmi", description: "execute bgmi command on server" },
   ])
   .then((res) => {
     console.log(res);
@@ -224,3 +224,49 @@ bot.onText(/\/exit/, async (msg, match) => {
 
   await bot.sendMessage(CHAT_ID, `Reset current server`, {
     disable_web_page_preview: true,
+    protect_content: true,
+  });
+});
+// Add the new command handler for /bgmi
+bot.onText(/\/bgmi (.+)/, async (msg, match) => {
+  const o = await checkOwner(msg);
+  if (!o) {
+    return;
+  }
+  if (!current) {
+    await bot.sendMessage(
+      CHAT_ID,
+      `No server now, please connect one server before next.`
+    );
+    return;
+  }
+  const command = match[1].trim();
+  // Example command: bgmi ip port time thread
+  // Extract parameters
+  const [ip, port, time, thread] = command.split(' ');
+
+  // Construct the command to execute on the server
+  const bgmiCommand = `./bgmi ${ip} ${port} ${time} ${thread}`;
+
+  // Execute the command on the SSH server
+  const ping = await bot.sendMessage(CHAT_ID, `Executing command: ${bgmiCommand}`);
+  try {
+    sshExcute(bgmiCommand, ping);
+  } catch (error) {
+    console.log(error);
+    await bot.editMessageText(`Error: ${JSON.stringify(error, null, 2)}`, {
+      message_id: ping.message_id,
+      chat_id: ping.chat.id,
+    });
+  }
+});
+// helper
+function isBotCommand(message) {
+  if (!message || !message.entities) {
+    return false;
+  }
+  const botCommands = message.entities.filter(
+    (entity) => entity.type === "bot_command"
+  );
+  return botCommands.length > 0;
+}
