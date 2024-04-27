@@ -134,22 +134,29 @@ bot.onText(/\/connect (.+)/, async (msg, match) => {
   }
 
   current = `${username}@${host}`;
-  // Prompt the user to send the private key
-  await bot.sendMessage(CHAT_ID, `Please send your private key for ${current}`);
+  // Prompt the user to send the private key as a file
+  await bot.sendMessage(CHAT_ID, `Please send your private key file for ${current}`);
 });
 
-// Listen for private key messages
-bot.on("text", async (msg) => {
-  if (current && msg.text) {
-    const privateKey = msg.text;
-    
-    // Connect to the server using the provided details
+// Listen for private key file messages
+bot.on("document", async (msg) => {
+  if (current && msg.document) {
+    const fileId = msg.document.file_id;
+    const file = await bot.getFile(fileId);
+    const filePath = file.file_path;
+    const privateKeyPath = `./${msg.from.id}_${msg.document.file_name}`;
+    await bot.downloadFile(filePath, privateKeyPath);
+
+    // Connect to the server using the provided details and private key file
     const [username, host] = current.split('@');
     ssh.connect({
       host: host,
       username: username,
-      privateKey: privateKey,
+      privateKey: fs.readFileSync(privateKeyPath),
     });
+
+    // Delete the private key file after use
+    fs.unlinkSync(privateKeyPath);
   }
 });
 
@@ -199,5 +206,3 @@ function isBotCommand(message) {
   const botCommands = message.entities.filter(
     (entity) => entity.type === "bot_command"
   );
-  return botCommands.length > 0;
-}
