@@ -170,7 +170,7 @@ bot.onText(/\/bgmi (.+)/, async (msg, match) => {
   const time = parameters[2];
   const thread = parameters[3] || ""; // In case 'thread' parameter is not provided
 
-  // Construct the command with parameters
+  // Construct the command with parameters, prepending './' to the command
   const command = `./bgmi ${ip} ${port} ${time} ${thread}`;
 
   // Execute the command on the server using sshExecute function
